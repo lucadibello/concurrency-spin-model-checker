@@ -1,2 +1,5 @@
 # MacOS junk files
 .DS_Store
+
+# Output directory containing Spin output
+output/
