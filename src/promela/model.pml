@@ -6,8 +6,8 @@
 int a[LENGTH];
 
 // Keep track of result of both versions of the program
-int sequentialFrequencies[MAX + 1];
-int sequentialMostFrequentValue = -1;
+int sequential_counts[MAX + 1];
+int sequential_result = -1;
 bit sequentialDone = 0;
 
 init {
@@ -37,28 +37,25 @@ init {
 // 1) Sequential version
 proctype sequentialCounter() {
 	int maxFrequency = -1;
-
 	int k;
 	for (k : 0 .. LENGTH - 1) {
 		int value = a[k];
-		sequentialFrequencies[value] = sequentialFrequencies[value] + 1;
+		sequential_counts[value] = sequential_counts[value] + 1;
 		if
-			:: sequentialFrequencies[value] > maxFrequency -> 
-				maxFrequency = sequentialFrequencies[value];
-				sequentialMostFrequentValue = value;
+			:: sequential_counts[value] > maxFrequency -> 
+				maxFrequency = sequential_counts[value];
+				sequential_result = value;
       :: else -> skip;
 		fi
 	}
-  
   // Signal that the sequential version is done
   sequentialDone = 1;
 }
 
 // 2) Parallel version
-proctype parallelCounter() {
-
-}
+// proctype parallelCounter() {}
 
 // Properties to verify
 // 1) Ensure that the sequential version eventually finishes
 ltl p1 { <> (sequentialDone == 1) }
+
