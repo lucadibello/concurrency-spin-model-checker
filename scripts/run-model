@@ -3,21 +3,43 @@
 # Create a output directory to store the files created by Spin
 mkdir -p output && rm -rf output/* && cd output
 
-# Run spin on the model file
-spin -a ../src/promela/model.pml
+ltls=(
+  "sequentialTermination"
+  "parallelTermination"
+)
 
+# Build the model using Spin
+spin -a ../src/promela/model.pml -N $ltl
 # Build the analyzer using gcc
-gcc -Wno-format-overflow -o analyzer pan.c
+gcc -Wno-format-overflow -DNFAIR=6 -o analyzer pan.c
 
-# Run the analyzer with the -a flag to check for assertion violations
-# -a = check for assertion violations
-# -f = check for LTL properties
-./analyzer -a -f -N ../src/promela/model.pml
+for ltl in "${ltls[@]}" 
+do
+  echo "Checking LTL property: $ltl..."
+  # Run the analyzer with the -a flag to check for assertion violations
+  # -a = check for assertion violations
+  # -f = check for LTL properties
+  # -N = specify the LTL property to check
+  ./analyzer -a -f -N $ltl
 
-# If there is a violation, a trace will be generated in the output directory
-# So, if the file exists, run spin again to get the counterexample
-if [ -f ./model.pml.trail ]; then
-	echo "Counterexample found. Running Spin to generate the trail file..."
-	spin -k ./model.pml.trail ../src/promela/model.pml
-fi
+  # If user has requested to stop the script if a violation is found
+  if [ $? -eq 1 ]; then
+    echo "Run stopped by user... aborting..."
+    exit 1
+  fi
+
+  # If there is a violation, a trace will be generated in the output directory
+  # So, if the file exists, run spin again to get the counterexample
+  if [ -f ./model.pml.trail ]; then
+    echo "Counterexample found for $ltl. Running Spin to generate the trail file..."
+    spin -k ./model.pml.trail ../src/promela/model.pml
+
+    # If we have found a counterexample, we can stop the loop and exit the script
+    echo "Exiting..."
+    exit 1
+  fi
+
+  # Press to continue
+  read -p "Press enter to continue..."
+done
 
