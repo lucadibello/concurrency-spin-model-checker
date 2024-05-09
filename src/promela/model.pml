@@ -33,6 +33,8 @@ init {
 }
 
 // Define both the sequential and parallel processes
+
+// 1) Sequential version
 proctype sequentialCounter() {
 	int maxFrequency = -1;
 
@@ -50,6 +52,11 @@ proctype sequentialCounter() {
   
   // Signal that the sequential version is done
   sequentialDone = 1;
+}
+
+// 2) Parallel version
+proctype parallelCounter() {
+
 }
 
 // Properties to verify
