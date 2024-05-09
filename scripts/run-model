@@ -8,11 +8,21 @@ ltls=(
   "parallelTermination"
 )
 
-# Build the model using Spin
-spin -a ../src/promela/model.pml -N $ltl
-# Build the analyzer using gcc
-gcc -Wno-format-overflow -DNFAIR=6 -o analyzer pan.c
+# Build the model using Spin + check for errors
+spin -a ../src/promela/model.pml -N $ltl > /dev/null
+if [ $? -ne 0 ]; then
+  echo "Error building the model..."
+  exit 1
+fi
 
+# Build the analyzer using gcc + check for errors
+gcc -Wno-format-overflow -DNFAIR=6 -o analyzer pan.c > /dev/null
+if [ $? -ne 0 ]; then
+  echo "Error building the analyzer..."
+  exit 1
+fi
+
+# For each available Linear Temporal Logic (LTL) property, check it using the analyzer
 for ltl in "${ltls[@]}" 
 do
   echo "Checking LTL property: $ltl..."
