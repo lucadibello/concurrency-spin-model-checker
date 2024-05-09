@@ -9,19 +9,15 @@ spin -a ../src/promela/model.pml
 # Build the analyzer using gcc
 gcc -Wno-format-overflow -o analyzer pan.c
 
-# Define a set of properties to check
-# -N prop checks for assertion violations
-# -N never claims checks for liveness properties
-# -N assertion checks for assertion violations
-# -N ltl checks for liveness properties
-
 # Run the analyzer with the -a flag to check for assertion violations
-./analyzer -a -N prop
+# -a = check for assertion violations
+# -f = check for LTL properties
+./analyzer -a -f -N ../src/promela/model.pml
 
 # If there is a violation, a trace will be generated in the output directory
 # So, if the file exists, run spin again to get the counterexample
-if [ -f ./model.pml.trail ];
-then
+if [ -f ./model.pml.trail ]; then
 	echo "Counterexample found. Running Spin to generate the trail file..."
 	spin -k ./model.pml.trail ../src/promela/model.pml
-fi 
+fi
+
