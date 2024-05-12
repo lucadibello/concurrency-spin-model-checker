@@ -1,0 +1,104 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[top=3cm, bottom=3cm, left = 2cm, right = 2cm]{geometry} 
+\geometry{a4paper} 
+\usepackage[utf8]{inputenc}
+\usepackage{textcomp}
+\usepackage{graphicx} 
+\usepackage{amsmath,amssymb}  
+\usepackage{bm}  
+\usepackage[pdftex,bookmarks,colorlinks,breaklinks]{hyperref}  
+\hypersetup{linkcolor=black,citecolor=black,filecolor=black,urlcolor=black} % black links, for printed output
+\usepackage{memhfixc} 
+\usepackage{pdfsync}  
+\usepackage{fancyhdr}
+\usepackage{listings}
+\pagestyle{fancy}
+\setlength{\headheight}{13.6pt}
+
+\title{Model checking with SPIN \\[1ex] \large Software Analysis, Spring 2024}
+\author{Luca Di Bello}
+\date{\today}
+
+\begin{document}
+\maketitle
+\tableofcontents
+
+\section{Introduction}
+
+In this assignments examines the implementation of model checking using the \href{https://spinroot.com/spin/whatispin.html}{SPIN} tool to verify the correctness of two versions of a frequency counter program: one sequential and the other parallel. Model checking is a technique that allows to verify the correctness certain properties of a system described in a finite-state model.
+\vspace{1em}
+\noindent In the following sections will be discussed how the program has been modeled using \href{https://en.wikipedia.org/wiki/Promela}{ProMeLa} language, which Linear Temporal Logic (LTL) properties have been defined to verify the correctness of the program, and how the verification has been performed using SPIN.
+
+\pagebreak
+
+\section{ProMeLa Model}
+
+The ProMeLa model consists of two main processes: the first process handles the sequential computation of frequency counts, storing results in an array \texttt{sequential\_counts}. The second process on the other hand, initiates parallel computation, spawning worker processes for each possible value in the input array. These workers update an array \texttt{parallel\_counts} concurrently. Race conditions are avoided as each worker updates a unique position in the array.
+
+As explicitly stated in the assignment, the ProMeLa model presents two constrants:
+
+\begin{enumerate}
+	\item \texttt{MAX}: It represents the maximum value that can be assigned to an element in the array. Used while filling the input array with random values.
+	\item \texttt{LENGTH}: the length of the input array.
+\end{enumerate}
+
+The model presents an \texttt{init} block that initializes the input array with random values between 0 and \texttt{MAX} and starts both the sequential and parallel processes. The code is available in listing \ref{lst:promela_init}.
+
+\begin{lstlisting}[language=Promela, caption={ProMeLa array intiialization and start of sequential and parallel processes}, captionpos=b, breaklines=true, label={lst:promela_init}]
+// Define the maximum number of elements in the array
+#define MAX 2
+#define LENGTH 2
+
+// Define the variables
+int a[LENGTH];
+
+init {
+	// Initialize the array non-deterministically
+  printf("Random state:\n")
+	int i;
+	for (i : 0 .. LENGTH - 1) {
+		// Select a random value for the array
+		int v;
+		select(v : 0 .. MAX);
+		// Assign the value to the array
+		a[i] = v;
+
+    // Print the value
+    printf("\ta[%d] = %d\n", i, v);
+	}
+
+	// Run the sequential version of the program
+  printf("Running sequential version...\n");
+	run sequentialCounter();
+ 
+  // Run the parallel version of the program
+  printf("Running parallel version...\n");
+  run parallelCounter();
+}
+\end{lstlisting}
+
+Things to add to this section:
+
+\begin{itemize}
+	\item Differences between ProMeLa and Java program
+	      \subitem To join processes, we use a channel!
+	      \subitem We start processes right away rather than create first and start later all together
+	      \subitem Same model comprehends bot sequential and parallel versions. In Java we had two separate classes.
+\end{itemize}
+
+\pagebreak
+
+\section{LTL Properties}
+
+\begin{itemize}
+	\item Explain how I implemented the LTL properties to check completition.
+	\item Explain the two additional LTL properties (1 must work, 1 must is not verified)
+\end{itemize}
+
+\pagebreak
+
+\section{Verification with SPIN}
+
+% \bibliographystyle{abbrv}
+% \bibliography{references}  % need to put bibtex references in references.bib 
+\end{document}
