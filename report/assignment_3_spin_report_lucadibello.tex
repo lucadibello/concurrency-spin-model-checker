@@ -52,6 +52,11 @@ The model presents an \texttt{init} block that initializes the input array with 
 // Define the variables
 int a[LENGTH];
 
+// Keep track of result of both versions of the program
+int sequential_counts[MAX + 1];
+int parallel_counts[MAX + 1];
+
+// Entry point of the program
 init {
 	// Initialize the array non-deterministically
   printf("Random state:\n")
@@ -77,23 +82,103 @@ init {
 }
 \end{lstlisting}
 
-Things to add to this section:
+\noindent As is possible to see from the code above, both versions of the program have been started using the \texttt{run} command inside the same ProMela model. This is different from the Java implementation, where the two versions were implemented in separate classes. This design choice was essential to allow the verification of both versions of the program in the same model as otherwise, it would be impossible to verify by confronting data yielded by two different simulations.
 
-\begin{itemize}
-	\item Differences between ProMeLa and Java program
-	      \subitem To join processes, we use a channel!
-	      \subitem We start processes right away rather than create first and start later all together
-	      \subitem Same model comprehends bot sequential and parallel versions. In Java we had two separate classes.
-\end{itemize}
+In the abstraction, the sequential and parallel processes are implemented as separate processes. An in depth analysis of each process is provided in the following sections.
 
+\subsection{Sequential Process}
+
+The sequential version of the frequency counter program is implemented in the \texttt{sequentialCounter} process. This process iterates over the input array and increments the corresponding position in the \texttt{sequential\_counts} array.
+
+The ProMeLa implementation of this version of the program is almost identical to the Java implementation. This was expected, as both languages uses a C-like syntax, and the logic of the program is simple. The code is available in listing \ref{lst:promela_sequential}.
+
+\begin{lstlisting}[language=Promela, caption={ProMeLa sequential version of the frequency counter program}, captionpos=b, breaklines=true, label={lst:promela_sequential}]
+proctype sequentialCounter() {
+	int maxFrequency = -1;
+	int k;
+	for (k : 0 .. LENGTH - 1) {
+		int value = a[k];
+		sequential_counts[value] = sequential_counts[value] + 1;
+		if
+			:: sequential_counts[value] > maxFrequency -> 
+				maxFrequency = sequential_counts[value];
+				sequential_result = value;
+      :: else -> skip;
+		fi
+	}
+  // Signal that the sequential version is done
+  sequentialDone = 1;
+}
+\end{lstlisting}
+
+The main difference between the Java and ProMeLa implementation is the way the program yields the result: in the Java implementation, the result is simply returned by the method, while in the ProMeLa implementation, the result is stored in a global variable \texttt{sequential\_result}. This is necessary as the process cannot return a value.
+
+In addition, I needed to add an additional global variable \texttt{sequentialDone} needed to verify the completion of the sequential process via LTL properties. Learn more about this in section \ref{sec:ltl_properties}.
+
+\subsection{Parallel Process}
+
+The parallel version of the frequency counter program is implemented in the \texttt{parallelCounter} process. This process spawns \texttt{MAX + 1} worker processes that concurrently count the frequency of each value in the input array. Each worker process is started with a unique value to count, and by iterating over the input array, increments the corres from the channelponding position in the \texttt{parallel\_counts} array.
+
+After all worker processes have completed, the main parallel counter process iterates throgh the results and saves the value with the highest frequency inside the \texttt{parallel\_result} variable.
+
+To be able to detect when all worker processes have completed, I decided to use a \textit{channel} to synchronize the main process with the workers. The channel created in the main process and passed as an argument to each worker process. As soon as a worker process completes, it sends its PID through passed channel. As we start \texttt{MAX + 1} worker processes, we expect to read \texttt{MAX + 1} values from the channel. By leveraging this, the \textit{parallelCounter} process is able to detect when all worker processes have completed. The code is available in listing \ref{lst:promela_parallel_wait}.
+
+\begin{lstlisting}[language=Promela, caption={ProMeLa parallel frequency counter - worker synchronization with channel}, captionpos=b, breaklines=true, label={lst:promela_parallel_wait}]
+// 2) Parallel version
+proctype parallelCounter() {
+  // Create channel to wait for workers to finish
+  chan joinCh = [MAX + 1] of { pid };
+  // Create array of PID's for workers
+  pid workers[MAX + 1];
+  // Create a worker for each possible value
+  int i;
+  for (i : 0 .. MAX) {
+    workers[i] = run parallelWorker(i, joinCh);
+  }
+  // Wait for all workers to finish by reading from the channel
+  for (i : 0 .. MAX) {
+    int done;
+    joinCh ? done;
+  }
+  // If we are here, all workers are done as we read MAX+1 values from the channel
+  printf("\t [!] all workers are done\n");
+  ...
+}
+\end{lstlisting}
+
+This implementation is different from the Java implementation, where threads are first created all together, then started, and joined in order to wait for their completion. In ProMeLa as we just saw, we start the worker processes right away, and we use a channel to wait for their completion.
+
+\subsubsection{Worker Process}
+
+\subsection{Parameters: MAX and LENGTH}
+
+If MAX and LENGTH are too high, the model checking process can take a long time to complete, or even run out of memory. To avoid this, I decided to set the values of MAX and LENGTH to 2. This way, the model checking process is fast and efficient, and it is possible to verify the correctness of the program in a reasonable amount of time.
+
+% Add screenshot of the model checking process with MAX / LENGTH too high
 \pagebreak
 
 \section{LTL Properties}
+\label{sec:ltl_properties}
 
-\begin{itemize}
-	\item Explain how I implemented the LTL properties to check completition.
-	\item Explain the two additional LTL properties (1 must work, 1 must is not verified)
-\end{itemize}
+\subsection{Verify completition of both sequential and parallel processes}
+
+To be able to verify the completition of both the sequential and parallel processes, I decided to use two global variables: \texttt{sequentialDone} and \texttt{parallelDone}. These variables are set to 0 by default, and set to 1 when the respective process has completed. To verify the completition of both processes, I defined the following LTL properties:
+
+\begin{lstlisting}[language=Promela, caption={LTL properties to verify the completition of both sequential and parallel processes}, captionpos=b, breaklines=true, label={lst:ltl_properties}]
+  ltl sequential_done { [] (sequentialDone == 1) }
+  ltl parallel_done { [] (parallelDone == 1) }
+\end{lstlisting}
+
+\subsection{Additional LTL properties}
+
+As requested by the assignment, I defined two additional LTL properties to verify the correctness of the program, one that must hold and one that must not hold. The LTL property that must hold is the following:
+
+\begin{enumerate}
+	\item \textbf{Property 1:} The sum of the frequencies of all values in the \texttt{sequential\_counts} array must be equal to the length of the input array.
+	\item \textbf{Property 2:} The sum of the frequencies of all values in the \texttt{parallel\_counts} array must be equal to the length of the input array.
+\end{enumerate}
+
+% FIXME: Add a non-hold property!
 
 \pagebreak
 
