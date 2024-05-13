@@ -15,6 +15,34 @@
 \pagestyle{fancy}
 \setlength{\headheight}{13.6pt}
 
+% Setup lslisting style
+\usepackage{color}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=1pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+
+\lstset{style=mystyle}
+
 \title{Model checking with SPIN \\[1ex] \large Software Analysis, Spring 2024}
 \author{Luca Di Bello}
 \date{\today}
@@ -44,7 +72,7 @@ As explicitly stated in the assignment, the ProMeLa model presents two constrant
 
 The model presents an \texttt{init} block that initializes the input array with random values between 0 and \texttt{MAX} and starts both the sequential and parallel processes. The code is available in listing \ref{lst:promela_init}.
 
-\begin{lstlisting}[language=Promela, caption={ProMeLa array intiialization and start of sequential and parallel processes}, captionpos=b, breaklines=true, label={lst:promela_init}]
+\begin{lstlisting}[language=Promela, caption={ProMeLa array initialization and start of sequential and parallel processes}, captionpos=b, breaklines=true, label={lst:promela_init}]
 // Define the maximum number of elements in the array
 #define MAX 2
 #define LENGTH 2
@@ -92,30 +120,52 @@ The sequential version of the frequency counter program is implemented in the \t
 
 The ProMeLa implementation of this version of the program is almost identical to the Java implementation. This was expected, as both languages uses a C-like syntax, and the logic of the program is simple. The code is available in listing \ref{lst:promela_sequential}.
 
-\begin{lstlisting}[language=Promela, caption={ProMeLa sequential version of the frequency counter program}, captionpos=b, breaklines=true, label={lst:promela_sequential}]
-proctype sequentialCounter() {
-	int maxFrequency = -1;
-	int k;
-	for (k : 0 .. LENGTH - 1) {
-		int value = a[k];
-		sequential_counts[value] = sequential_counts[value] + 1;
-		if
-			:: sequential_counts[value] > maxFrequency -> 
-				maxFrequency = sequential_counts[value];
-				sequential_result = value;
-      :: else -> skip;
-		fi
-	}
-  // Signal that the sequential version is done
-  sequentialDone = 1;
+% Java code
+\begin{minipage}[t]{0.45\textwidth}
+	\begin{lstlisting}[language=Java, caption={Java sequential version of the frequency counter program}, captionpos=b, label={lst:java_frequency}]
+public int mostFrequent() {
+    int mostFrequent = -1;
+    int maxFrequency = -1;
+    int[] frequencies = new int[max + 1];
+    for (int k = 0; k < a.length; k++) {
+        int value = a[k];
+        frequencies[value] += 1;
+        int frequency = frequencies[value];
+        if (frequency > maxFrequency) {
+            mostFrequent = value;
+            maxFrequency = frequency;
+        }
+    }
+    return mostFrequent;
 }
-\end{lstlisting}
 
-The main difference between the Java and ProMeLa implementation is the way the program yields the result: in the Java implementation, the result is simply returned by the method, while in the ProMeLa implementation, the result is stored in a global variable \texttt{sequential\_result}. This is necessary as the process cannot return a value.
+  \end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.45\textwidth}
+	\begin{lstlisting}[language=Promela, caption={ProMeLa sequential version of the frequency counter program}, captionpos=b, breaklines=true, label={lst:promela_sequential}]
+proctype sequentialCounter() {
+    int maxFrequency = -1;
+    int k;
+    for (k : 0 .. LENGTH - 1) {
+        int value = a[k];
+        sequential_counts[value] = sequential_counts[value] + 1;
+        if
+        :: sequential_counts[value] > maxFrequency -> 
+            maxFrequency = sequential_counts[value];
+            sequential_result = value;
+        :: else -> skip;
+        fi
+    }
+    // Signal that the sequential version is done
+    sequentialDone = 1;
+}
+  \end{lstlisting}
+\end{minipage}
 
-In addition, I needed to add an additional global variable \texttt{sequentialDone} needed to verify the completion of the sequential process via LTL properties. Learn more about this in section \ref{sec:ltl_properties}.
+\noindent The main difference between the Java and ProMeLa implementation is the way the program yields the result: in the Java implementation, the result is simply returned by the method, while in the ProMeLa implementation, the result is stored in a global variable \texttt{sequential\_result}. This is necessary as the process cannot return a value.
 
 \subsection{Parallel Process}
+\label{sec:parallel_process}
 
 The parallel version of the frequency counter program is implemented in the \texttt{parallelCounter} process. This process spawns \texttt{MAX + 1} worker processes that concurrently count the frequency of each value in the input array. Each worker process is started with a unique value to count, and by iterating over the input array, increments the corres from the channelponding position in the \texttt{parallel\_counts} array.
 
@@ -123,8 +173,7 @@ After all worker processes have completed, the main parallel counter process ite
 
 To be able to detect when all worker processes have completed, I decided to use a \textit{channel} to synchronize the main process with the workers. The channel created in the main process and passed as an argument to each worker process. As soon as a worker process completes, it sends its PID through passed channel. As we start \texttt{MAX + 1} worker processes, we expect to read \texttt{MAX + 1} values from the channel. By leveraging this, the \textit{parallelCounter} process is able to detect when all worker processes have completed. The code is available in listing \ref{lst:promela_parallel_wait}.
 
-\begin{lstlisting}[language=Promela, caption={ProMeLa parallel frequency counter - worker synchronization with channel}, captionpos=b, breaklines=true, label={lst:promela_parallel_wait}]
-// 2) Parallel version
+\begin{lstlisting}[language=Promela, caption={ProMeLa parallel frequency counter - worker synchronization with channel}, label={lst:promela_parallel_wait}]
 proctype parallelCounter() {
   // Create channel to wait for workers to finish
   chan joinCh = [MAX + 1] of { pid };
@@ -146,14 +195,45 @@ proctype parallelCounter() {
 }
 \end{lstlisting}
 
-This implementation is different from the Java implementation, where threads are first created all together, then started, and joined in order to wait for their completion. In ProMeLa as we just saw, we start the worker processes right away, and we use a channel to wait for their completion.
+\noindent This implementation differs from the Java implementation, where it does not wait for all threads to complete but instead starts them all together and then, waits for each thread singularly to complete, to save its result. In ProMeLa, we start the worker processes right away and use a channel to wait for all of them to complete before saving the result.
 
 \subsubsection{Worker Process}
 
-As mentioned above, each worker process counts the frequency of a specific value in the input array. The worker process is implemented in the \texttt{parallelWorker} process. The code is available in listing \ref{lst:promela_parallel_worker}.
+The worker process has been implemented in the \texttt{parallelWorker} process. As cited in the previous section, each worker process is started with a unique value to count and increments the corresponding position in the \texttt{parallel\_counts} array. The code is available in listing \ref{lst:promela_parallel_worker}.
 
-\begin{lstlisting}[language=Promela, caption={ProMeLa parallel frequency counter - worker process}, captionpos=b, breaklines=true, label={lst:promela_parallel_worker}]
-// The worker process represents a thread that looks for the count of a specific value in the array
+\begin{minipage}[t]{0.45\textwidth}
+  \begin{lstlisting}[language=Java, caption={Java parallel worker thread implementation leveraging Threads}, captionpos=b, label={lst:java_parallel_worker}]
+protected int frequencyOf(int n) {
+    int frequency = 0;
+    for (int value: a) {
+      if (value == n)
+        frequency += 1;
+    }
+    return frequency;
+}
+
+class ThreadedCounter extends SequentialCounter implements Runnable
+{
+	 private int frequency;
+	 private int n;
+	 
+	 ThreadedCounter(int[] a, int n, int max) {
+		  super(a, max);
+		  this.n = n;
+	 }
+
+	 public void run() {
+		  frequency = frequencyOf(n);
+	 }
+
+	 public int frequency() {
+		  return frequency;
+	 }
+}
+  \end{lstlisting}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.45\textwidth}
+	\begin{lstlisting}[language=Promela, caption={ProMeLa parallel worker implementation leveraging processes}, captionpos=b, breaklines=true, label={lst:promela_parallel_worker}]
 proctype parallelWorker(int value; chan out) {
   // Look for the value in the array
   int frequency = 0;
@@ -164,16 +244,30 @@ proctype parallelWorker(int value; chan out) {
       :: else -> skip;
     fi
   }
+
   // Update the value in the parallel counts array
   parallel_counts[value] = frequency;
   printf("Worker for value %d is done\n", value);
   out ! _pid;
 }
-\end{lstlisting}
 
-% TODO: CONTINUE FROM HERE!
 
-\subsection{Parameters: MAX and LENGTH}
+
+
+
+
+
+
+
+
+  \end{lstlisting}
+\end{minipage}
+
+As also described in the caption of the listings above, the main difference between the two implementations is how the worker process is started. In the Java implementation, this required the creation of a specific class that implements the \texttt{Runnable} interface, while in the ProMeLa implementation, this is simply a process that is started by the main \texttt{parallelCounter} process.
+
+A small implemetation detail is that the Java worker, leveraging an external function named \textit{frequencyOf}, only computes the frequency of a specific value, while the ProMeLa worker process needs to handle both this logic, but also the saving of the result in the \texttt{parallel\_counts} and the synchronization with the parent process using the channel (as explained in detail in section \ref{sec:parallel_process}).
+
+\subsection{Parameters: MAX and LENGTHf}
 
 If MAX and LENGTH are too high, the model checking process can take a long time to complete, or even run out of memory. To avoid this, I decided to set the values of MAX and LENGTH to 2. This way, the model checking process is fast and efficient, and it is possible to verify the correctness of the program in a reasonable amount of time.
 
