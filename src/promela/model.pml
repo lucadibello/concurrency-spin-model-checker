@@ -1,6 +1,6 @@
 // Define the maximum number of elements in the array
 #define MAX 2
-#define LENGTH 2
+#define LENGTH 4
 
 // Define the variables
 int a[LENGTH];
@@ -14,6 +14,9 @@ int parallel_result = -1;
 // Keep track of the status of both versions of the program
 bit sequentialDone = 0;
 bit parallelDone = 0;
+// Sum of the counts in both versions
+int sumCountsSequential = 0;
+int sumCountsParallel = 0;
 
 init {
 	// Initialize the array non-deterministically
@@ -120,5 +123,6 @@ proctype parallelWorker(int value; chan out) {
 // 1) Ensure that both the sequential and parallel version eventually finishes
 ltl sequentialTermination { <> (sequentialDone == 1) }
 ltl parallelTermination { <> (parallelDone == 1) }
-// 2) Ensure that the sum of the counts in both versions is equal
+// 2) The sum of the counts in both versions should be equal to the length of the array
+ltl sumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSequential == LENGTH && sumCountsParallel == LENGTH) }
 

@@ -202,7 +202,7 @@ proctype parallelCounter() {
 The worker process has been implemented in the \texttt{parallelWorker} process. As cited in the previous section, each worker process is started with a unique value to count and increments the corresponding position in the \texttt{parallel\_counts} array. The code is available in listing \ref{lst:promela_parallel_worker}.
 
 \begin{minipage}[t]{0.45\textwidth}
-  \begin{lstlisting}[language=Java, caption={Java parallel worker thread implementation leveraging Threads}, captionpos=b, label={lst:java_parallel_worker}]
+	\begin{lstlisting}[language=Java, caption={Java parallel worker thread implementation leveraging Threads}, captionpos=b, label={lst:java_parallel_worker}]
 protected int frequencyOf(int n) {
     int frequency = 0;
     for (int value: a) {
@@ -233,7 +233,8 @@ class ThreadedCounter extends SequentialCounter implements Runnable
   \end{lstlisting}
 \end{minipage}\hfill
 \begin{minipage}[t]{0.45\textwidth}
-	\begin{lstlisting}[language=Promela, caption={ProMeLa parallel worker implementation leveraging processes}, captionpos=b, breaklines=true, label={lst:promela_parallel_worker}]
+	\begin{lstlisting}[language=Promela, caption={ProMeLa parallel frequency counter - worker process}, captionpos=b, breaklines=true, label={lst:promela_parallel_worker}]
+// The worker process represents a thread that looks for the count of a specific value in the array
 proctype parallelWorker(int value; chan out) {
   // Look for the value in the array
   int frequency = 0;
@@ -244,30 +245,29 @@ proctype parallelWorker(int value; chan out) {
       :: else -> skip;
     fi
   }
-
   // Update the value in the parallel counts array
   parallel_counts[value] = frequency;
   printf("Worker for value %d is done\n", value);
   out ! _pid;
 }
-
-
-
-
-
-
-
-
-
-
   \end{lstlisting}
 \end{minipage}
+
+As mentioned above, each worker process counts the frequency of a specific value in the input array. The worker process is implemented in the \texttt{parallelWorker} process. The code is available in listing \ref{lst:promela_parallel_worker}.
+
+
+
+
+
+
+
+
 
 As also described in the caption of the listings above, the main difference between the two implementations is how the worker process is started. In the Java implementation, this required the creation of a specific class that implements the \texttt{Runnable} interface, while in the ProMeLa implementation, this is simply a process that is started by the main \texttt{parallelCounter} process.
 
 A small implemetation detail is that the Java worker, leveraging an external function named \textit{frequencyOf}, only computes the frequency of a specific value, while the ProMeLa worker process needs to handle both this logic, but also the saving of the result in the \texttt{parallel\_counts} and the synchronization with the parent process using the channel (as explained in detail in section \ref{sec:parallel_process}).
 
-\subsection{Parameters: MAX and LENGTHf}
+\subsection{Parameters: MAX and LENGTH}
 
 If MAX and LENGTH are too high, the model checking process can take a long time to complete, or even run out of memory. To avoid this, I decided to set the values of MAX and LENGTH to 2. This way, the model checking process is fast and efficient, and it is possible to verify the correctness of the program in a reasonable amount of time.
 
@@ -292,7 +292,12 @@ As requested by the assignment, I defined two additional LTL properties to verif
 
 \begin{enumerate}
 	\item \textbf{Property 1:} The sum of the frequencies of all values in the \texttt{sequential\_counts} array must be equal to the length of the input array.
-	\item \textbf{Property 2:} The sum of the frequencies of all values in the \texttt{parallel\_counts} array must be equal to the length of the input array.
+\end{enumerate}
+
+On the other hand, the LTL property that must not hold is the following:
+
+\begin{enumerate}
+	\item \textbf{Property 2:} The sum of the frequencies of all values in the \texttt{parallel\_counts} array must be greater than the length of the input array.
 \end{enumerate}
 
 % FIXME: Add a non-hold property!
