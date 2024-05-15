@@ -150,6 +150,29 @@ This implementation is different from the Java implementation, where threads are
 
 \subsubsection{Worker Process}
 
+As mentioned above, each worker process counts the frequency of a specific value in the input array. The worker process is implemented in the \texttt{parallelWorker} process. The code is available in listing \ref{lst:promela_parallel_worker}.
+
+\begin{lstlisting}[language=Promela, caption={ProMeLa parallel frequency counter - worker process}, captionpos=b, breaklines=true, label={lst:promela_parallel_worker}]
+// The worker process represents a thread that looks for the count of a specific value in the array
+proctype parallelWorker(int value; chan out) {
+  // Look for the value in the array
+  int frequency = 0;
+  int i;
+  for (i : 0 .. LENGTH - 1) {
+    if
+      :: a[i] == value -> frequency = frequency + 1;
+      :: else -> skip;
+    fi
+  }
+  // Update the value in the parallel counts array
+  parallel_counts[value] = frequency;
+  printf("Worker for value %d is done\n", value);
+  out ! _pid;
+}
+\end{lstlisting}
+
+% TODO: CONTINUE FROM HERE!
+
 \subsection{Parameters: MAX and LENGTH}
 
 If MAX and LENGTH are too high, the model checking process can take a long time to complete, or even run out of memory. To avoid this, I decided to set the values of MAX and LENGTH to 2. This way, the model checking process is fast and efficient, and it is possible to verify the correctness of the program in a reasonable amount of time.

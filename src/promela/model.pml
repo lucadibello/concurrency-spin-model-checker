@@ -117,7 +117,8 @@ proctype parallelWorker(int value; chan out) {
 }
 
 // Properties to verify
-// 1) Ensure that the sequential version eventually finishes
+// 1) Ensure that both the sequential and parallel version eventually finishes
 ltl sequentialTermination { <> (sequentialDone == 1) }
 ltl parallelTermination { <> (parallelDone == 1) }
+// 2) Ensure that the sum of the counts in both versions is equal
 
