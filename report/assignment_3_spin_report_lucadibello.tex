@@ -275,16 +275,24 @@ If MAX and LENGTH are too high, the model checking process can take a long time 
 \pagebreak
 
 \section{LTL Properties}
-\label{sec:ltl_properties}
 
 \subsection{Verify completition of both sequential and parallel processes}
 
-To be able to verify the completition of both the sequential and parallel processes, I decided to use two global variables: \texttt{sequentialDone} and \texttt{parallelDone}. These variables are set to 0 by default, and set to 1 when the respective process has completed. To verify the completition of both processes, I defined the following LTL properties:
+To be able to verify the completition of both the sequential and parallel processes, I decided to use two global variables: \texttt{sequentialDone} and \texttt{parallelDone}. These variables are set to 0 by default, and set to 1 when the respective process has completed. To verify the completition of both processes, I defined the following LTL property:
 
-\begin{lstlisting}[language=Promela, caption={LTL properties to verify the completition of both sequential and parallel processes}, captionpos=b, breaklines=true, label={lst:ltl_properties}]
-  ltl sequential_done { [] (sequentialDone == 1) }
-  ltl parallel_done { [] (parallelDone == 1) }
+\begin{lstlisting}[language=Promela, caption={LTL properties to verify the completition of both sequential and parallel processes}, captionpos=b, breaklines=true]
+ltl termination { <> (sequentialdone == 1 && paralleldone == 1) }
 \end{lstlisting}
+
+\subsection{Sum of frequencies}
+
+As we are interested in verifying the correctness of the frequency counter program, I decided to add a new LTL properety that ensures that the sum of the frequencies of all values in the \texttt{sequential\_counts} and \texttt{parallel\_counts} arrays is equal to the length of the input array. This property is defined as follows:
+
+\begin{lstlisting}[language=Promela, caption={LTL properties to verify the sum of frequencies in the sequential and parallel arrays}, captionpos=b, breaklines=true]
+ltl sumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSequential == LENGTH && sumCountsParallel == LENGTH) }
+\end{lstlisting}
+
+As also possible to see from the code above, to verify this property I had to add two counters, \\ \texttt{sumCountsSequential} and \texttt{sumCountsParallel}, that are computed by summing the frequencies of all values in the respective arrays right before completing the respective processes. This way, I can verify that the sum of the frequencies is equal to the length of the input array.
 
 \subsection{Additional LTL properties}
 
