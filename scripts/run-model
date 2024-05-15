@@ -4,44 +4,57 @@
 mkdir -p output && rm -rf output/* && cd output
 
 ltls=(
-  "sequentialTermination"
-  "parallelTermination"
+  "termination"
+  "sumCounts"
+  "sameResult"
+  "sameSumCounts"
 )
 
 # Build the model using Spin + check for errors
-spin -a ../src/promela/model.pml -N $ltl > /dev/null
+echo "Building the ProMeLa model..."
+OUTPUT=$(spin -a ../src/promela/model.pml -N $ltl)
 if [ $? -ne 0 ]; then
-  echo "Error building the model..."
+  echo "\t Error building the model. Check the output: $OUTPUT"
   exit 1
+else
+  echo "\t Success!"
 fi
 
 # Build the analyzer using gcc + check for errors
-gcc -Wno-format-overflow -DNFAIR=6 -o analyzer pan.c > /dev/null
+echo "Building the analyzer..."
+OUTPUT=$(gcc -Wno-format-overflow -DNFAIR=6 -o analyzer pan.c 2>&1)
 if [ $? -ne 0 ]; then
-  echo "Error building the analyzer..."
+  echo "\t Error building the analyzer. Check the output: $OUTPUT"
   exit 1
+else
+  echo "\t Success!"
 fi
 
+echo "Starting the analysis, checking ${#ltls[@]} LTL properties..."
+
 # For each available Linear Temporal Logic (LTL) property, check it using the analyzer
+counter=1
 for ltl in "${ltls[@]}" 
 do
-  echo "Checking LTL property: $ltl..."
+  echo "[$counter/${#ltls[@]}] Checking LTL property: $ltl"
   # Run the analyzer with the -a flag to check for assertion violations
   # -a = check for assertion violations
   # -f = check for LTL properties
   # -N = specify the LTL property to check
-  ./analyzer -a -f -N $ltl
+  ./analyzer -a -f -N $ltl > /dev/null
 
   # If user has requested to stop the script if a violation is found
   if [ $? -eq 1 ]; then
-    echo "Run stopped by user... aborting..."
+    echo "\t Run stopped by user... aborting..."
     exit 1
+  else
+    echo "\t Success!"
   fi
 
   # If there is a violation, a trace will be generated in the output directory
   # So, if the file exists, run spin again to get the counterexample
   if [ -f ./model.pml.trail ]; then
-    echo "Counterexample found for $ltl. Running Spin to generate the trail file..."
+    echo "\t Counterexample found for $ltl. Running Spin to generate the trail file..."
     spin -k ./model.pml.trail ../src/promela/model.pml
 
     # If we have found a counterexample, we can stop the loop and exit the script
@@ -49,7 +62,7 @@ do
     exit 1
   fi
 
-  # Press to continue
-  read -p "Press enter to continue..."
+  # Increase the counter
+  counter=$((counter+1))
 done
 
