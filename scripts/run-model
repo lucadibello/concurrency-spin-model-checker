@@ -8,6 +8,8 @@ ltls=(
   "sumCounts"
   "sameResult"
   "sameSumCounts"
+  "seqBeforePar"
+  "notSameResult"
 )
 
 # Build the model using Spin + check for errors
@@ -33,7 +35,8 @@ fi
 echo "Starting the analysis, checking ${#ltls[@]} LTL properties..."
 
 # For each available Linear Temporal Logic (LTL) property, check it using the analyzer
-counter=1
+counter=1 # Keep track of total checked LTL properties
+totSuccess=0 # Keep track of successful LTL properties
 for ltl in "${ltls[@]}" 
 do
   echo "[$counter/${#ltls[@]}] Checking LTL property: $ltl"
@@ -41,14 +44,12 @@ do
   # -a = check for assertion violations
   # -f = check for LTL properties
   # -N = specify the LTL property to check
-  ./analyzer -a -f -N $ltl > /dev/null
+  ./analyzer -a -f -N $ltl
 
   # If user has requested to stop the script if a violation is found
   if [ $? -eq 1 ]; then
     echo "\t Run stopped by user... aborting..."
     exit 1
-  else
-    echo "\t Success!"
   fi
 
   # If there is a violation, a trace will be generated in the output directory
@@ -60,9 +61,15 @@ do
     # If we have found a counterexample, we can stop the loop and exit the script
     echo "Exiting..."
     exit 1
+  else
+    echo "\t Success! No counterexample found for $ltl"
+    totSuccess=$((totSuccess+1))
   fi
 
   # Increase the counter
   counter=$((counter+1))
 done
+
+# Print report
+echo "Analysis finished. $totSuccess/$[counter-1] LTL properties checked successfully."
 
