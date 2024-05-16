@@ -143,9 +143,8 @@ ltl sumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSeque
 ltl sameResult { [] (sequentialDone == 1 && parallelDone == 1) -> (sequential_result == parallel_result) }
 // 4) The sum of the counts in both versions should be the same
 ltl sameSumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSequential == sumCountsParallel) }
-// 5) State of the execution
+// 5) State of the execution (the sequential process is started before the parallel one)
 ltl seqBeforePar { [](sequentialDone -> !parallelDone U parallelDone) }
 
-// Property that SPIN is not able to verify
-ltl notSameResult { [] (sequentialDone == 1 && parallelDone == 1) -> (sequential_result != parallel_result) }
-
+// Property that SPIN is NOT able to verify as it is not true
+ltl notSameResult { [](sequential_result == parallel_result) }

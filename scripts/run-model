@@ -9,7 +9,7 @@ ltls=(
   "sameResult"
   "sameSumCounts"
   "seqBeforePar"
-  "notSameResult"
+  "alwaysSameResult"
 )
 
 # Build the model using Spin + check for errors
@@ -44,7 +44,7 @@ do
   # -a = check for assertion violations
   # -f = check for LTL properties
   # -N = specify the LTL property to check
-  ./analyzer -a -f -N $ltl
+  ./analyzer -a -f -N $ltl > /dev/null
 
   # If user has requested to stop the script if a violation is found
   if [ $? -eq 1 ]; then
