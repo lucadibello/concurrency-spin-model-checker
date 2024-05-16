@@ -9,7 +9,7 @@ ltls=(
   "sameResult"
   "sameSumCounts"
   "seqBeforePar"
-  "alwaysSameResult"
+  "alwaysSameResult" # this property will not hold
 )
 
 # Build the model using Spin + check for errors

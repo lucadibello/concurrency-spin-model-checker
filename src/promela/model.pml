@@ -147,4 +147,4 @@ ltl sameSumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsS
 ltl seqBeforePar { [](sequentialDone -> !parallelDone U parallelDone) }
 
 // Property that SPIN is NOT able to verify as it is not true
-ltl notSameResult { [](sequential_result == parallel_result) }
+ltl alwaysSameResult { [](sequential_result == parallel_result) }
