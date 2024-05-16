@@ -255,14 +255,6 @@ proctype parallelWorker(int value; chan out) {
 
 As mentioned above, each worker process counts the frequency of a specific value in the input array. The worker process is implemented in the \texttt{parallelWorker} process. The code is available in listing \ref{lst:promela_parallel_worker}.
 
-
-
-
-
-
-
-
-
 As also described in the caption of the listings above, the main difference between the two implementations is how the worker process is started. In the Java implementation, this required the creation of a specific class that implements the \texttt{Runnable} interface, while in the ProMeLa implementation, this is simply a process that is started by the main \texttt{parallelCounter} process.
 
 A small implemetation detail is that the Java worker, leveraging an external function named \textit{frequencyOf}, only computes the frequency of a specific value, while the ProMeLa worker process needs to handle both this logic, but also the saving of the result in the \texttt{parallel\_counts} and the synchronization with the parent process using the channel (as explained in detail in section \ref{sec:parallel_process}).
@@ -294,21 +286,49 @@ ltl sumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSeque
 
 As also possible to see from the code above, to verify this property I had to add two counters, \\ \texttt{sumCountsSequential} and \texttt{sumCountsParallel}, that are computed by summing the frequencies of all values in the respective arrays right before completing the respective processes. This way, I can verify that the sum of the frequencies is equal to the length of the input array.
 
-\subsection{Additional LTL properties}
+\subsection{Invalid LTL formula: partial result}
 
-As requested by the assignment, I defined two additional LTL properties to verify the correctness of the program, one that must hold and one that must not hold. The LTL property that must hold is the following:
+As requesed by the assignment, I also added and invalid LTL formula that SPIN will not be able to verify. The property I decided to add is the following:
 
-\begin{enumerate}
-	\item \textbf{Property 1:} The sum of the frequencies of all values in the \texttt{sequential\_counts} array must be equal to the length of the input array.
-\end{enumerate}
+\begin{lstlisting}[language=Promela, caption={Invalid LTL property that SPIN will not be able to verify}, captionpos=b, breaklines=true]
+ltl alwaysSameResult { [](sequential_result == parallel_result) }
+\end{lstlisting}
 
-On the other hand, the LTL property that must not hold is the following:
+This LTL is wrong, as the two results are not expected to be the same while the processes are still running. This is because the two versions of the program are executed concurrently, and, while the sequential frequency counter keeps tracks of the most frequent value, the parallel counter does not. In fact, the latter will update the \texttt{parallel\_result} variable only after all worker processes have completed. This means that the two results will always be different while the processes are still running.
 
-\begin{enumerate}
-	\item \textbf{Property 2:} The sum of the frequencies of all values in the \texttt{parallel\_counts} array must be greater than the length of the input array.
-\end{enumerate}
+SPIN gives th following error when trying to verify this property:
 
-% FIXME: Add a non-hold property!
+\begin{lstlisting}
+ltl notSameResult: [] ((sequential_result==parallel_result))
+Never claim moves to line 62    [(1)]
+          Random state:
+                a[0] = 0
+                a[1] = 0
+          Running sequential version...
+          Running parallel version...
+spin: _spin_nvr.tmp:61, Error: assertion violated
+spin: text of failed assertion: assert(!(!((sequential_result==parallel_result))))
+Never claim moves to line 61    [assert(!(!((sequential_result==parallel_result))))]
+spin: trail ends after 41 steps
+#processes: 2
+                a[0] = 0
+                a[1] = 0
+                sequential_counts[0] = 1
+                sequential_counts[1] = 0
+                sequential_counts[2] = 0
+                parallel_counts[0] = 0
+                parallel_counts[1] = 0
+                parallel_counts[2] = 0
+                sequential_result = 0
+                parallel_result = -1
+                sequentialDone = 0
+                parallelDone = 0
+                sumCountsSequential = 0
+                sumCountsParallel = 0
+ 41:    proc  1 (sequentialCounter:1) ../src/promela/model.pml:51 (state 12)
+ 41:    proc  0 (:init::1) ../src/promela/model.pml:42 (state 22)
+ 41:    proc  - (notSameResult:1) _spin_nvr.tmp:60 (state 6)
+\end{lstlisting}
 
 \pagebreak
 
