@@ -427,7 +427,7 @@ the sequential process. This is the counterexample that SPIN will find
 From the output above, it is possible to understand why, where and when
 SPIN found the counterexample: the LTL property is violated right after
 the first iteration of the sequential process as the two results are
-different ($sequential\_result = 0$ and $parallel\_result = -1$). At the
+different (`sequential\_result` = 0 and `parallel\_result` = -1). At the
 moment ot the violation, the parallel process has not even started yet.
 
 ## SPIN model checker via script
