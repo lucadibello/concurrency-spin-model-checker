@@ -226,7 +226,7 @@ is started by the main `parallelCounter` process.
 
 ```java
 //
-// java code
+// Java code
 //
 protected int frequencyOf(int n) {
     int frequency = 0;
