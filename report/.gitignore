@@ -8,4 +8,7 @@
 !*.tex
 !*.bib
 !*.pdf
-!images/
+!images/*
+
+# Junk files!
+.DS_Store
