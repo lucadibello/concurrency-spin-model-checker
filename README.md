@@ -1,13 +1,6 @@
----
-author:
-- Luca Di Bello
-date: 2024-05-18
-title: |
-  Model checking with SPIN\
-  Software Analysis, Spring 2024
----
+# Model checking with SPIN
 
-# Introduction
+## Introduction
 
 This assignments examines the implementation of model checking using the
 [SPIN](https://spinroot.com/spin/whatispin.html) tool to verify the
@@ -22,7 +15,7 @@ Linear Temporal Logic (LTL) properties have been defined to verify the
 correctness of the program, and how the verification has been performed
 using SPIN.
 
-# ProMeLa Model
+## ProMeLa Model
 
 The ProMeLa model consists of two main processes: the first process
 handles the sequential computation of frequency counts, storing results
@@ -45,11 +38,9 @@ constrants:
 
 The model presents an `init` block that initializes the input array with
 random values between 0 and `MAX` and starts both the sequential and
-parallel processes. The code is available in listing
-[\[lst:promela_init\]](#lst:promela_init){reference-type="ref"
-reference="lst:promela_init"}.
+parallel processes. The code is available in code block below:
 
-``` {#lst:promela_init .promela language="Promela" caption="ProMeLa array initialization and start of sequential and parallel processes" captionpos="b" breaklines="true" label="lst:promela_init"}
+```promela
 // Define the maximum number of elements in the array
 #define MAX 2
 #define LENGTH 2
@@ -80,7 +71,7 @@ init {
     // Run the sequential version of the program
   printf("Running sequential version...\n");
     run sequentialCounter();
- 
+
   // Run the parallel version of the program
   printf("Running parallel version...\n");
   run parallelCounter();
@@ -99,7 +90,7 @@ In the abstraction, the sequential and parallel processes are
 implemented as separate processes. An in-depth analysis of each process
 is provided in the following sections.
 
-## Sequential Process
+### Sequential Process
 
 The sequential version of the frequency counter program is implemented
 in the `sequentialCounter` process. This process iterates over the input
@@ -109,11 +100,9 @@ array and increments the corresponding position in the
 The ProMeLa implementation of this version of the program is almost
 identical to the Java implementation. This was expected, as both
 languages use a C-like syntax, and the logic of the program is simple.
-The code is available in listing
-[\[lst:promela_sequential\]](#lst:promela_sequential){reference-type="ref"
-reference="lst:promela_sequential"}.
+The code is available in listing blow:
 
-``` {#lst:java_frequency .java language="Java" caption="Java sequential version of the frequency counter program" captionpos="b" label="lst:java_frequency"}
+```java
 public int mostFrequent() {
     int mostFrequent = -1;
     int maxFrequency = -1;
@@ -131,7 +120,7 @@ public int mostFrequent() {
 }
 ```
 
-``` {#lst:promela_sequential .promela language="Promela" caption="ProMeLa sequential version of the frequency counter program" captionpos="b" breaklines="true" label="lst:promela_sequential"}
+```promela
 proctype sequentialCounter() {
     int maxFrequency = -1;
     int k;
@@ -139,7 +128,7 @@ proctype sequentialCounter() {
         int value = a[k];
         sequential_counts[value] = sequential_counts[value] + 1;
         if
-        :: sequential_counts[value] > maxFrequency -> 
+        :: sequential_counts[value] > maxFrequency ->
             maxFrequency = sequential_counts[value];
             sequential_result = value;
         :: else -> skip;
@@ -157,7 +146,7 @@ implementation, the result is stored in a global variable
 `sequential_result`. This is necessary as the process cannot return a
 value.
 
-## Parallel Process {#sec:parallel_process}
+### Parallel Process
 
 The parallel version of the frequency counter program is implemented in
 the `parallelCounter` process. This process spawns `MAX + 1` worker
@@ -170,18 +159,16 @@ After all worker processes have completed, the main parallel counter
 process iterates through the results and saves the value with the
 highest frequency inside the `parallel_result` variable.
 
-To detect when all worker processes have completed, a *channel* is used
+To detect when all worker processes have completed, a _channel_ is used
 to synchronize the main process with the workers. The channel is created
 in the main process and passed as an argument to each worker process. As
 soon as a worker process completes, it sends its PID through the
 channel. Since we start `MAX + 1` worker processes, we expect to read
 `MAX + 1` values from the channel. By leveraging this, the
-*parallelCounter* process can detect when all worker processes have
-completed. The code is available in listing
-[\[lst:promela_parallel_wait\]](#lst:promela_parallel_wait){reference-type="ref"
-reference="lst:promela_parallel_wait"}.
+_parallelCounter_ process can detect when all worker processes have
+completed. The code is available in code block below.
 
-``` {#lst:promela_parallel_wait .promela language="Promela" caption="ProMeLa parallel frequency counter - worker synchronization with channel" label="lst:promela_parallel_wait"}
+```promela
 proctype parallelCounter() {
   // Create channel to wait for workers to finish
   chan joinCh = [MAX + 1] of { pid };
@@ -210,15 +197,13 @@ save its result. In the ProMeLa abstraction, we start the worker
 processes right away and use a channel to wait for all of them to
 complete before saving the actual result.
 
-### Worker Process
+#### Worker Process
 
 The worker process has been implemented in the `parallelWorker` process.
 As mentioned in the previous section, each worker process is started
 with a unique value to count and increments the corresponding position
 in the `parallel_counts` array when it finds the value in the input
-array. The code is available in listing
-[\[lst:promela_parallel_worker\]](#lst:promela_parallel_worker){reference-type="ref"
-reference="lst:promela_parallel_worker"}.
+array. The code is available in code block below.
 
 The main difference between the two implementations is how the worker
 process is started. In the Java implementation, this required the
@@ -226,7 +211,7 @@ creation of a specific class that implements the `Runnable` interface,
 while in the ProMeLa implementation, this each worker is a process that
 is started by the main `parallelCounter` process.
 
-``` {#lst:java_parallel_worker .java language="Java" caption="Java parallel worker thread implementation leveraging Threads" captionpos="b" label="lst:java_parallel_worker"}
+```java
 protected int frequencyOf(int n) {
     int frequency = 0;
     for (int value: a) {
@@ -240,7 +225,7 @@ class ThreadedCounter extends SequentialCounter implements Runnable
 {
      private int frequency;
      private int n;
-     
+
      ThreadedCounter(int[] a, int n, int max) {
           super(a, max);
           this.n = n;
@@ -256,7 +241,7 @@ class ThreadedCounter extends SequentialCounter implements Runnable
 }
 ```
 
-``` {#lst:promela_parallel_worker .promela language="Promela" caption="ProMeLa parallel frequency counter - worker process" captionpos="b" breaklines="true" label="lst:promela_parallel_worker"}
+```promela
 // The worker process represents a thread that looks for the count of a specific value in the array
 proctype parallelWorker(int value; chan out) {
   // Look for the value in the array
@@ -276,15 +261,13 @@ proctype parallelWorker(int value; chan out) {
 ```
 
 A notable implementation detail is that the Java worker, using an
-external function named *frequencyOf*, only computes the frequency of a
+external function named _frequencyOf_, only computes the frequency of a
 specific value. In contrast, the ProMeLa worker process not only
 computes this frequency but also saves the result in the
 `parallel_counts` array and synchronizes with the parent process using
-the channel (as detailed in section
-[2.2](#sec:parallel_process){reference-type="ref"
-reference="sec:parallel_process"}).
+the channel.
 
-## Parameters: MAX and LENGTH
+### Parameters: MAX and LENGTH
 
 If MAX and LENGTH are too high, the model checking process can take a
 long time to complete, or even run out of memory. To analyze the
@@ -292,22 +275,18 @@ behavior of the model checking process with different values of MAX and
 LENGTH, I first run the checker by keeping one parameter fixed and
 varying the other. This has been done for both parameters to understad
 their impact on the model checking performance. The results can be seen
-in figure [1](#fig:execution_time){reference-type="ref"
-reference="fig:execution_time"}.
+in the following figure:
 
 ![Model checking execution time with different values of MAX and
-LENGTH](./images/max_length_exec_time.png){#fig:execution_time
-width="100%"}
+LENGTH](./images/max_length_exec_time.png)
 
 Then, to have a better understanding, I also decided to increase the
 values of both MAX and LENGTH to understand how the model checking
 process behaves. Then, I merged the results in a single plot, available
-in figure [2](#fig:all_execution_time){reference-type="ref"
-reference="fig:all_execution_time"}.
+in the figure below:
 
 ![Model checking execution time with increasing values of MAX and
-LENGTH](./images/max_len_increase_exec_time.png){#fig:all_execution_time
-width="90%"}
+LENGTH](./images/max_len_increase_exec_time.png)
 
 From the plot, it is possible to see that the model checking process is
 fast enough when the values of MAX and LENGTH are extremely low
@@ -321,13 +300,13 @@ After the benchmarks outlined above, has been decided to set the valued
 of MAX and LENGTH to 2, to keep the model checking process fast and
 efficient enough to be able to analyze the behavior of the model.
 
-# LTL Properties {#sec:ltl}
+## LTL Properties
 
 In the following subsections, I will discuss the LTL properties that
 have been defined to satisfy the requirements of the assignment. I
 developed
 
-## Verify completition of both sequential and parallel processes
+### Verify completition of both sequential and parallel processes
 
 To be able to verify the completition of both the sequential and
 parallel processes, I decided to use two global variables:
@@ -336,16 +315,16 @@ default, and set to 1 when the respective process has completed. To
 verify the completition of both processes, I defined the following LTL
 property:
 
-``` {.promela language="Promela" caption="LTL property to verify the completition of both sequential and parallel processes" captionpos="b" breaklines="true"}
+```promela
 ltl termination { <> (sequentialdone == 1 && paralleldone == 1) }
 ```
 
-## Same most frequent value {#sec:ltl_same_result}
+### Same most frequent value
 
 To ensure that both versions of the frequency counter give the same
 result, I defined the following LTL property:
 
-``` {.promela language="Promela" caption="LTL property to verify that both versions of the frequency counter give the same result"}
+```promela
 ltl sameResult { [] (sequentialDone == 1 && parallelDone == 1) -> (sequential_result == parallel_result)}
 ```
 
@@ -354,7 +333,7 @@ parallel) is the same after both processes have completed. This is
 important property to verify, as the two algorithms are expected to
 yield the same result.
 
-## Sum of frequencies
+### Sum of frequencies
 
 As we are interested in verifying the correctness of the frequency
 counter program, I decided to add an additional LTL properety that
@@ -362,7 +341,7 @@ ensures that the sum of the frequencies of all values in the
 `sequential_counts` and `parallel_counts` arrays is equal to the length
 of the input array. This property is defined as follows:
 
-``` {.promela language="Promela" caption="LTL properties to verify the sum of frequencies in the sequential and parallel arrays" captionpos="b" breaklines="true"}
+```promela
 ltl sumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSequential == LENGTH && sumCountsParallel == LENGTH) }
 ```
 
@@ -374,20 +353,19 @@ the sum of the frequencies is equal to the length of the input array.
 Without these variables, it would be impossible to verify the total sum
 of the frequencies.
 
-## Invalid LTL formula: partial result
+### Invalid LTL formula: partial result
 
 As requesed by the assignment, I also added on purpose an invalid LTL
 formula that SPIN will not be able to verify. The property I decided to
 add is the following:
 
-``` {.promela language="Promela" caption="Invalid LTL property that SPIN will not be able to verify" captionpos="b" breaklines="true"}
+```promela
 ltl alwaysSameResult { [](sequential_result == parallel_result) }
 ```
 
-This property is very similar to the `sameResult` property (refer to
-section [3.2](#sec:ltl_same_result){reference-type="ref"
-reference="sec:ltl_same_result"}), but it does not take into account the
-completition of the processes. This LTL is wrong, as the two results are
+This property is very similar to the `sameResult` property,
+but it does not take into account the completition of the processes.
+This LTL is wrong, as the two results are
 not expected to be the same while the processes are still running.
 
 This is because the two versions of the program are not executed in
@@ -405,6 +383,7 @@ and SPIN will find a counterexample right after the first iteration of
 the sequential process. This is the counterexample that SPIN will find
 (truncate for brevity):
 
+```text
     #processes: 2
                     a[0] = 0
                     a[1] = 0
@@ -423,6 +402,7 @@ the sequential process. This is the counterexample that SPIN will find
      41:    proc  1 (sequentialCounter:1) ../src/promela/model.pml:51 (state 12)
      41:    proc  0 (:init::1) ../src/promela/model.pml:42 (state 22)
      41:    proc  - (notSameResult:1) _spin_nvr.tmp:60 (state 6)
+```
 
 From the output above, it is possible to understand why, where and when
 SPIN found the counterexample: the LTL property is violated right after
@@ -430,16 +410,17 @@ the first iteration of the sequential process as the two results are
 different ($sequential\_result = 0$ and $parallel\_result = -1$). At the
 moment ot the violation, the parallel process has not even started yet.
 
-# SPIN model checker via script
+## SPIN model checker via script
 
 To automate the verification process, has been created a script that
 will build the ProMeLa model, compile the resulting analyzer using
 `gcc`, and run the model checker using SPIN for each of the defined LTL
-properties (refer to section [3](#sec:ltl){reference-type="ref"
-reference="sec:ltl"}). To run the script, it is possible to use the
-provided Makefile target \"`run`\" or run the script directly. Use the
+properties. To run the script, it is possible to use the
+provided Makefile target `run` or run the script directly. Use the
 commands below to run the script:
 
+```bash
       make run
       # or
       ./scripts/run-model.sh
+```
