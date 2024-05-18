@@ -42,8 +42,9 @@ parallel processes. The code is available in code block below:
 
 ```promela
 //
-// ProMeLa Code
+// ProMeLa code
 //
+
 // Define the maximum number of elements in the array
 #define MAX 2
 #define LENGTH 2
@@ -107,7 +108,7 @@ The code is available in listing blow:
 
 ```java
 //
-// Java Code
+// Java code
 //
 public int mostFrequent() {
     int mostFrequent = -1;
@@ -128,7 +129,7 @@ public int mostFrequent() {
 
 ```promela
 //
-// ProMeLa Code
+// ProMeLa code
 //
 proctype sequentialCounter() {
     int maxFrequency = -1;
