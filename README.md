@@ -278,7 +278,7 @@ their impact on the model checking performance. The results can be seen
 in the following figure:
 
 ![Model checking execution time with different values of MAX and
-LENGTH](./images/max_length_exec_time.png)
+LENGTH](./report/images/max_length_exec_time.png)
 
 Then, to have a better understanding, I also decided to increase the
 values of both MAX and LENGTH to understand how the model checking
@@ -286,7 +286,7 @@ process behaves. Then, I merged the results in a single plot, available
 in the figure below:
 
 ![Model checking execution time with increasing values of MAX and
-LENGTH](./images/max_len_increase_exec_time.png)
+LENGTH](./report/images/max_len_increase_exec_time.png)
 
 From the plot, it is possible to see that the model checking process is
 fast enough when the values of MAX and LENGTH are extremely low
