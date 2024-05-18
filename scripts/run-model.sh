@@ -7,7 +7,6 @@ ltls=(
   "termination"
   "sumCounts"
   "sameResult"
-  "sameSumCounts"
   "seqBeforePar"
   "alwaysSameResult" # this property will not hold
 )

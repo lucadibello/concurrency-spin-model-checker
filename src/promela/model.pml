@@ -1,6 +1,6 @@
 // Define the maximum number of elements in the array
-#define MAX 2
-#define LENGTH 2
+#define MAX 3
+#define LENGTH 3
 
 // Define the variables
 int a[LENGTH];
@@ -141,9 +141,7 @@ ltl termination { <> (sequentialDone == 1 && parallelDone == 1) }
 ltl sumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSequential == LENGTH && sumCountsParallel == LENGTH) }
 // 3) The result of both versions should be the same
 ltl sameResult { [] (sequentialDone == 1 && parallelDone == 1) -> (sequential_result == parallel_result) }
-// 4) The sum of the counts in both versions should be the same
-ltl sameSumCounts { [] (sequentialDone == 1 && parallelDone == 1) -> (sumCountsSequential == sumCountsParallel) }
-// 5) State of the execution (the sequential process is started before the parallel one)
+// 4) State of the execution (the sequential process is started before the parallel one)
 ltl seqBeforePar { [](sequentialDone -> !parallelDone U parallelDone) }
 
 // Property that SPIN is NOT able to verify as it is not true

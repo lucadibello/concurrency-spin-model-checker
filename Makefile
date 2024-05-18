@@ -2,5 +2,5 @@
 
 .PHONY: run
 run:
-	@./scripts/run-model
+	@./scripts/run-model.sh
 	
