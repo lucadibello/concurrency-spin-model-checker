@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This assignments examines the implementation of model checking using the
+This assignment examines the implementation of model checking using the
 [SPIN](https://spinroot.com/spin/whatispin.html) tool to verify the
 correctness of two versions of a frequency counter program: one
 sequential and the other parallel. Model checking is a technique that
