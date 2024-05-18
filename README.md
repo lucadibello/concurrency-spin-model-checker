@@ -41,6 +41,9 @@ random values between 0 and `MAX` and starts both the sequential and
 parallel processes. The code is available in code block below:
 
 ```promela
+//
+// ProMeLa Code
+//
 // Define the maximum number of elements in the array
 #define MAX 2
 #define LENGTH 2
@@ -103,6 +106,9 @@ languages use a C-like syntax, and the logic of the program is simple.
 The code is available in listing blow:
 
 ```java
+//
+// Java Code
+//
 public int mostFrequent() {
     int mostFrequent = -1;
     int maxFrequency = -1;
@@ -121,6 +127,9 @@ public int mostFrequent() {
 ```
 
 ```promela
+//
+// ProMeLa Code
+//
 proctype sequentialCounter() {
     int maxFrequency = -1;
     int k;
@@ -169,6 +178,9 @@ _parallelCounter_ process can detect when all worker processes have
 completed. The code is available in code block below.
 
 ```promela
+//
+// ProMeLa code
+//
 proctype parallelCounter() {
   // Create channel to wait for workers to finish
   chan joinCh = [MAX + 1] of { pid };
@@ -212,6 +224,9 @@ while in the ProMeLa implementation, this each worker is a process that
 is started by the main `parallelCounter` process.
 
 ```java
+//
+// java code
+//
 protected int frequencyOf(int n) {
     int frequency = 0;
     for (int value: a) {
@@ -242,6 +257,10 @@ class ThreadedCounter extends SequentialCounter implements Runnable
 ```
 
 ```promela
+//
+// ProMeLa code
+//
+
 // The worker process represents a thread that looks for the count of a specific value in the array
 proctype parallelWorker(int value; chan out) {
   // Look for the value in the array
